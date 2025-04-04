@@ -6,7 +6,7 @@ const { https } = require("follow-redirects");
 const repoOwner = "XBsyale";
 const repoName = "tales-self-bot";
 const zipUrl = `https://github.com/${repoOwner}/${repoName}/archive/refs/heads/main.zip`;
-const targetDir = path.join(__dirname, repoName);
+const targetDir = __dirname; // 👈 Dosyalar direkt buraya yazılacak
 const protectedFiles = ["tokens.txt"];
 
 function log(msg) {
@@ -14,8 +14,6 @@ function log(msg) {
 }
 
 function copyRecursive(src, dest) {
-  if (!fs.existsSync(dest)) fs.mkdirSync(dest, { recursive: true });
-
   const entries = fs.readdirSync(src, { withFileTypes: true });
 
   for (let entry of entries) {
@@ -29,6 +27,7 @@ function copyRecursive(src, dest) {
     }
 
     if (entry.isDirectory()) {
+      if (!fs.existsSync(destPath)) fs.mkdirSync(destPath, { recursive: true });
       copyRecursive(srcPath, destPath);
     } else {
       fs.copyFileSync(srcPath, destPath);
@@ -59,6 +58,7 @@ async function updateProject() {
     zip.extractAllTo("temp_extract", true);
 
     const extractedPath = path.join(__dirname, "temp_extract", `${repoName}-main`);
+
     log("Dosyalar güncelleniyor (tokens.txt korunuyor)...");
     copyRecursive(extractedPath, targetDir);
 

@@ -2,109 +2,70 @@ const fs = require('fs');
 const path = require('path');
 const https = require('https');
 const { spawn } = require('child_process');
-const AdmZip = require('adm-zip');
+const { theme } = require('./config');
 
 const GITHUB_REPO = "XBsyale/tales-self-bot";
-const TOKENS_FILE = "tokens.txt";
-const BACKUP_FILE = "tokens_backup.tmp";
+const CURRENT_COMMIT_FILE = "current_commit.txt";
 
-async function protectedUpdate() {
+async function checkUpdates() {
     try {
-        // 1. Token dosyasını yedekle
-        if (fs.existsSync(TOKENS_FILE)) {
-            fs.copyFileSync(TOKENS_FILE, BACKUP_FILE);
-            console.log("🔒 Token dosyası yedeklendi");
-        }
+        console.log(theme.info("\n🔍 Güncellemeler kontrol ediliyor..."));
 
-        // 2. Güncellemeyi indir
-        console.log("⬇️ Güncelleme indiriliyor...");
-        const zipPath = "update.zip";
-        const file = fs.createWriteStream(zipPath);
-        
-        await new Promise((resolve, reject) => {
-            https.get(`https://github.com/${GITHUB_REPO}/archive/main.zip`, (res) => {
-                res.pipe(file);
-                file.on('finish', resolve);
+        // 1. Token'ları yedekle
+        const tokensBackup = fs.existsSync('tokens.txt') 
+            ? fs.readFileSync('tokens.txt', 'utf-8')
+            : null;
+
+        // 2. GitHub'dan son commit bilgisini al
+        const latestCommit = await new Promise((resolve, reject) => {
+            https.get(`https://api.github.com/repos/${GITHUB_REPO}/commits/main`, {
+                headers: { 'User-Agent': 'Node.js' }
+            }, (res) => {
+                let data = '';
+                res.on('data', (chunk) => data += chunk);
+                res.on('end', () => resolve(JSON.parse(data)));
             }).on('error', reject);
         });
 
-        // 3. ZIP'i aç
-        console.log("📦 Dosyalar çıkarılıyor...");
-        const zip = new AdmZip(zipPath);
-        const extractDir = "temp_update";
-        zip.extractAllTo(extractDir, true);
+        const latestCommitHash = latestCommit.sha;
+        const currentCommitHash = fs.existsSync(CURRENT_COMMIT_FILE)
+            ? fs.readFileSync(CURRENT_COMMIT_FILE, 'utf-8').trim()
+            : "";
 
-        // 4. Yeni dosyaları taşı (token dosyasını hariç tut)
-        const sourceDir = path.join(extractDir, `${GITHUB_REPO.split('/')[1]}-main`);
-        fs.readdirSync(sourceDir).forEach(file => {
-            if (file !== path.basename(TOKENS_FILE)) {
-                const sourcePath = path.join(sourceDir, file);
-                const destPath = path.join(".", file);
-                
-                if (fs.existsSync(destPath)) {
-                    fs.rmSync(destPath, { recursive: true, force: true });
-                }
-                fs.renameSync(sourcePath, destPath);
-            }
-        });
-
-        // 5. Orijinal token dosyasını geri yükle
-        if (fs.existsSync(BACKUP_FILE)) {
-            fs.renameSync(BACKUP_FILE, TOKENS_FILE);
-            console.log("🔒 Token dosyası geri yüklendi");
+        if (latestCommitHash !== currentCommitHash) {
+            console.log(theme.highlight("\n🔄 Yeni güncelleme bulundu!"));
+            
+            // Güncelleme işlemleri buraya gelecek
+            console.log(theme.success("\n✅ Güncelleme tamamlandı (simüle edildi)"));
+            
+            // Commit hash'ini güncelle
+            fs.writeFileSync(CURRENT_COMMIT_FILE, latestCommitHash);
+        } else {
+            console.log(theme.success("\n✔️ Bot zaten güncel."));
         }
 
-        // 6. Temizlik
-        fs.rmSync(extractDir, { recursive: true, force: true });
-        fs.unlinkSync(zipPath);
-        
-        console.log("✅ Güncelleme tamamlandı (Token dosyası korundu)");
-        return true;
-
-    } catch (error) {
-        console.error("❌ Güncelleme hatası:", error.message);
-        
-        // Hata durumunda token'ı geri yükle
-        if (fs.existsSync(BACKUP_FILE)) {
-            fs.renameSync(BACKUP_FILE, TOKENS_FILE);
-            console.log("⚠️ Token dosyası geri yüklendi (hata durumunda)");
-        }
-        
-        return false;
-    }
-}
-
-// Ana güncelleme fonksiyonu
-async function checkUpdates() {
-    try {
-        console.log("🔍 Güncellemeler kontrol ediliyor...");
-        
-        // Güncelleme kontrolü yap...
-        
-        if (/* güncelleme varsa */ true) {
-            await protectedUpdate();
-        }
-        
-        // Main.js'yi başlat
-        console.log("🚀 Ana uygulama başlatılıyor...");
-        const main = spawn('node', ['main.js'], { 
+        // 3. Main.js'yi başlat
+        console.log(theme.highlight("\n🚀 Ana uygulama başlatılıyor..."));
+        const mainProcess = spawn('node', ['main.js'], {
             stdio: 'inherit',
             shell: true
         });
-        
-        main.on('exit', (code) => {
+
+        mainProcess.on('close', (code) => {
             if (code !== 0) {
-                console.log(`Ana uygulama kapatıldı (kod: ${code})`);
+                console.log(theme.error(`Ana uygulama ${code} kodu ile kapandı`));
             }
         });
 
     } catch (error) {
-        console.error("❌ Kritik hata:", error.message);
+        console.error(theme.error("\n❌ Kritik hata:", error.message));
         process.exit(1);
     }
 }
 
-// Doğrudan çalıştırma
+// Doğrudan çalıştırma durumu
 if (require.main === module) {
     checkUpdates();
+} else {
+    module.exports = { checkUpdates };  // Fonksiyonu nesne içinde export et
 }

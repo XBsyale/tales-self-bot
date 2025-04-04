@@ -26,13 +26,6 @@ console.log(theme.title(`
 
 // Ana menü
 async function main() {
-    // Güncelleme kontrolü yap
-    const updated = await checkUpdates();
-    if (updated) {
-        console.log(theme.highlight("\n🔄 Bot yeniden başlatılıyor..."));
-        await new Promise(resolve => setTimeout(resolve, 3000));
-        process.exit(0);
-    }
 
     let tokens = loadTokens();
     

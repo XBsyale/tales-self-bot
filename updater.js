@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const AdmZip = require("adm-zip");
-const fetch = require("node-fetch");
+const { https } = require("follow-redirects");
 
 const repoOwner = "XBsyale";
 const repoName = "tales-self-bot";
@@ -37,12 +37,14 @@ function copyRecursive(src, dest) {
   }
 }
 
-async function downloadZip(url, outputPath) {
-  const response = await fetch(url);
-  if (!response.ok) throw new Error(`HTTP Hatası: ${response.status}`);
-
-  const buffer = await response.buffer();
-  fs.writeFileSync(outputPath, buffer);
+function downloadZip(url, outputPath) {
+  return new Promise((resolve, reject) => {
+    const file = fs.createWriteStream(outputPath);
+    https.get(url, (response) => {
+      response.pipe(file);
+      file.on("finish", () => file.close(resolve));
+    }).on("error", reject);
+  });
 }
 
 async function updateProject() {
@@ -56,9 +58,7 @@ async function updateProject() {
     const zip = new AdmZip(zipPath);
     zip.extractAllTo("temp_extract", true);
 
-    const extractedFolderName = `${repoName}-main`;
-    const extractedPath = path.join(__dirname, "temp_extract", extractedFolderName);
-
+    const extractedPath = path.join(__dirname, "temp_extract", `${repoName}-main`);
     log("Dosyalar güncelleniyor (tokens.txt korunuyor)...");
     copyRecursive(extractedPath, targetDir);
 

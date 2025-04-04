@@ -1,5 +1,4 @@
 const fs = require('fs');
-const path = require('path');
 const https = require('https');
 const { spawn } = require('child_process');
 const { theme } = require('./config');
@@ -11,19 +10,25 @@ async function checkUpdates() {
     try {
         console.log(theme.info("\n🔍 Güncellemeler kontrol ediliyor..."));
 
-        // 1. Token'ları yedekle
+        // 1. Token yedekleme
         const tokensBackup = fs.existsSync('tokens.txt') 
             ? fs.readFileSync('tokens.txt', 'utf-8')
             : null;
 
-        // 2. GitHub'dan son commit bilgisini al
+        // 2. GitHub API'den commit bilgisi al
         const latestCommit = await new Promise((resolve, reject) => {
             https.get(`https://api.github.com/repos/${GITHUB_REPO}/commits/main`, {
                 headers: { 'User-Agent': 'Node.js' }
             }, (res) => {
                 let data = '';
                 res.on('data', (chunk) => data += chunk);
-                res.on('end', () => resolve(JSON.parse(data)));
+                res.on('end', () => {
+                    try {
+                        resolve(JSON.parse(data));
+                    } catch (e) {
+                        reject(e);
+                    }
+                });
             }).on('error', reject);
         });
 
@@ -34,11 +39,7 @@ async function checkUpdates() {
 
         if (latestCommitHash !== currentCommitHash) {
             console.log(theme.highlight("\n🔄 Yeni güncelleme bulundu!"));
-            
-            // Güncelleme işlemleri buraya gelecek
-            console.log(theme.success("\n✅ Güncelleme tamamlandı (simüle edildi)"));
-            
-            // Commit hash'ini güncelle
+            console.log(theme.success("\n✅ Güncelleme simüle edildi"));
             fs.writeFileSync(CURRENT_COMMIT_FILE, latestCommitHash);
         } else {
             console.log(theme.success("\n✔️ Bot zaten güncel."));
@@ -51,10 +52,13 @@ async function checkUpdates() {
             shell: true
         });
 
-        mainProcess.on('close', (code) => {
-            if (code !== 0) {
-                console.log(theme.error(`Ana uygulama ${code} kodu ile kapandı`));
-            }
+        return new Promise((resolve) => {
+            mainProcess.on('close', (code) => {
+                if (code !== 0) {
+                    console.log(theme.error(`Ana uygulama ${code} kodu ile kapandı`));
+                }
+                resolve();
+            });
         });
 
     } catch (error) {
@@ -63,9 +67,10 @@ async function checkUpdates() {
     }
 }
 
-// Doğrudan çalıştırma durumu
+// Doğrudan çalıştırma desteği
 if (require.main === module) {
     checkUpdates();
-} else {
-    module.exports = { checkUpdates };  // Fonksiyonu nesne içinde export et
 }
+
+// Modül olarak kullanım desteği
+module.exports = checkUpdates;

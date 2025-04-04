@@ -2,11 +2,12 @@ const fs = require("fs");
 const path = require("path");
 const AdmZip = require("adm-zip");
 const { https } = require("follow-redirects");
+const { exec } = require("child_process"); // exec ile komut çalıştıracağız
 
 const repoOwner = "XBsyale";
 const repoName = "tales-self-bot";
 const zipUrl = `https://github.com/${repoOwner}/${repoName}/archive/refs/heads/main.zip`;
-const targetDir = __dirname; // 👈 Dosyalar direkt buraya yazılacak
+const targetDir = __dirname;
 const protectedFiles = ["tokens.txt"];
 
 function log(msg) {
@@ -62,10 +63,22 @@ async function updateProject() {
     log("Dosyalar güncelleniyor (tokens.txt korunuyor)...");
     copyRecursive(extractedPath, targetDir);
 
-    fs.rmSync(zipPath);
+    // Silme işlemi sırasında force: true kullanılarak zorla silme
+    fs.rmSync(zipPath, { force: true });
     fs.rmSync(path.join(__dirname, "temp_extract"), { recursive: true, force: true });
 
     log("✅ Güncelleme tamamlandı!");
+
+    // main.js'i çalıştırma
+    exec("node main.js", (error, stdout, stderr) => {
+      if (error) {
+        console.error(`exec error: ${error}`);
+        return;
+      }
+      console.log(`stdout: ${stdout}`);
+      console.error(`stderr: ${stderr}`);
+    });
+
   } catch (err) {
     console.error("❌ Hata oluştu:", err.message);
   }

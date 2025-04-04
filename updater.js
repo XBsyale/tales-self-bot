@@ -7,13 +7,12 @@ const repoOwner = "XBsyale";
 const repoName = "tales-self-bot";
 const zipUrl = `https://github.com/${repoOwner}/${repoName}/archive/refs/heads/main.zip`;
 const targetDir = path.join(__dirname, repoName);
-const protectedFiles = ["tokens.txt"]; // Korunacak dosyalar
+const protectedFiles = ["tokens.txt"];
 
 function log(msg) {
   console.log(`[Updater] ${msg}`);
 }
 
-// === Dosya ve klasörleri kopyala (korunanlar hariç) ===
 function copyRecursive(src, dest) {
   if (!fs.existsSync(dest)) fs.mkdirSync(dest, { recursive: true });
 
@@ -23,10 +22,7 @@ function copyRecursive(src, dest) {
     const srcPath = path.join(src, entry.name);
     const destPath = path.join(dest, entry.name);
 
-    // Atlanacak klasörler
     if ([".git", "node_modules"].includes(entry.name)) continue;
-
-    // Korunacak dosyalar
     if (protectedFiles.includes(entry.name)) {
       log(`Korunuyor: ${entry.name}`);
       continue;
@@ -41,25 +37,28 @@ function copyRecursive(src, dest) {
   }
 }
 
-// === ZIP indir ===
-function downloadZip(url, outputPath, callback) {
-  const file = fs.createWriteStream(outputPath);
-  https.get(url, (response) => {
-    response.pipe(file);
-    file.on("finish", () => {
-      file.close(callback);
-    });
+function downloadZip(url, outputPath) {
+  return new Promise((resolve, reject) => {
+    const file = fs.createWriteStream(outputPath);
+    https.get(url, (response) => {
+      response.pipe(file);
+      file.on("finish", () => {
+        file.close(() => {
+          resolve();
+        });
+      });
+    }).on("error", reject);
   });
 }
 
-// === Başla ===
-function updateProject() {
+async function updateProject() {
   const zipPath = path.join(__dirname, "temp.zip");
 
-  log("ZIP indiriliyor...");
-  downloadZip(zipUrl, zipPath, () => {
-    log("ZIP indirildi. Açılıyor...");
+  try {
+    log("ZIP indiriliyor...");
+    await downloadZip(zipUrl, zipPath);
 
+    log("ZIP indirildi. Açılıyor...");
     const zip = new AdmZip(zipPath);
     zip.extractAllTo("temp_extract", true);
 
@@ -69,12 +68,13 @@ function updateProject() {
     log("Dosyalar güncelleniyor (tokens.txt korunuyor)...");
     copyRecursive(extractedPath, targetDir);
 
-    // Temizleme
     fs.rmSync(zipPath);
     fs.rmSync(path.join(__dirname, "temp_extract"), { recursive: true, force: true });
 
     log("✅ Güncelleme tamamlandı!");
-  });
+  } catch (err) {
+    console.error("❌ Hata oluştu:", err.message);
+  }
 }
 
 updateProject();

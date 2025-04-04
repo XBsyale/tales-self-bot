@@ -79,6 +79,9 @@ async function updateProject() {
       console.error(`stderr: ${stderr}`);
     });
 
+    // İlk terminali kapatma
+    exec("exit");
+
   } catch (err) {
     console.error("❌ Hata oluştu:", err.message);
   }

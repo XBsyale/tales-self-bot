@@ -8,7 +8,6 @@ const checkToken = require('./modules/tokenChecker');
 const moneyChecker = require('./modules/moneyChecker');
 const sendMessage = require('./modules/messageSender');
 const transferMoney = require('./modules/moneyTransfer');
-const checkUpdates = require('./updater'); // Güncelleme modülü eklendi
 
 // TOPLAM PARA İÇİN GLOBAL DEĞİŞKEN
 let totalCowoncy = 0;

@@ -78,8 +78,15 @@ async function updateProject() {
       console.log(`stdout: ${stdout}`);
       console.error(`stderr: ${stderr}`);
 
-      // Yeni terminal açıldıktan sonra ilk terminali kapat
-      exec("exit");
+      // İlk terminali taskkill ile kapatma
+      exec("taskkill /F /IM node.exe", (killError, killStdout, killStderr) => {
+        if (killError) {
+          console.error(`taskkill error: ${killError}`);
+          return;
+        }
+        console.log(`taskkill stdout: ${killStdout}`);
+        console.error(`taskkill stderr: ${killStderr}`);
+      });
     });
 
   } catch (err) {

@@ -69,8 +69,8 @@ async function updateProject() {
 
     log("✅ Güncelleme tamamlandı!");
 
-    // Terminali sıfırlayıp main.js'i başlatma
-    exec("start cmd /K cls && node main.js", (error, stdout, stderr) => {
+    // Yeni terminal penceresinde main.js'i çalıştırma
+    exec("start cmd /K node main.js", (error, stdout, stderr) => {
       if (error) {
         console.error(`exec error: ${error}`);
         return;
@@ -78,6 +78,11 @@ async function updateProject() {
       console.log(`stdout: ${stdout}`);
       console.error(`stderr: ${stderr}`);
     });
+
+    // 2 saniye sonra, ilk terminali kapatma komutu
+    setTimeout(() => {
+      exec("exit");
+    }, 2000);  // 2 saniye bekleyip, terminali kapat
 
   } catch (err) {
     console.error("❌ Hata oluştu:", err.message);

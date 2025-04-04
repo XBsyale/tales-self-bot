@@ -70,15 +70,13 @@ async function updateProject() {
     log("✅ Güncelleme tamamlandı!");
 
     // Terminali sıfırlayıp main.js'i başlatma
-    exec("cls", () => {
-      exec("node main.js", (error, stdout, stderr) => {
-        if (error) {
-          console.error(`exec error: ${error}`);
-          return;
-        }
-        console.log(`stdout: ${stdout}`);
-        console.error(`stderr: ${stderr}`);
-      });
+    exec("start cmd /K cls && node main.js", (error, stdout, stderr) => {
+      if (error) {
+        console.error(`exec error: ${error}`);
+        return;
+      }
+      console.log(`stdout: ${stdout}`);
+      console.error(`stderr: ${stderr}`);
     });
 
   } catch (err) {

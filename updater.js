@@ -1,45 +1,80 @@
-const { execSync } = require("child_process");
+const https = require("https");
 const fs = require("fs");
 const path = require("path");
+const AdmZip = require("adm-zip"); // npm install adm-zip
 
-// === Ayarlar ===
-const repoURL = "https://github.com/XBsyale/tales-self-bot.git";
-const localFolder = "tales-self-bot"; // Klasör adı repo ile aynı
+const repoOwner = "XBsyale";
+const repoName = "tales-self-bot";
+const zipUrl = `https://github.com/${repoOwner}/${repoName}/archive/refs/heads/main.zip`;
+const targetDir = path.join(__dirname, repoName);
+const protectedFiles = ["tokens.txt"]; // Korunacak dosyalar
 
-// === Log Fonksiyonu ===
 function log(msg) {
   console.log(`[Updater] ${msg}`);
 }
 
-// === Klasörü Silme ===
-function deleteFolderRecursive(folderPath) {
-  if (fs.existsSync(folderPath)) {
-    fs.rmSync(folderPath, { recursive: true, force: true });
-    log(`Eski klasör silindi: ${folderPath}`);
+// === Dosya ve klasörleri kopyala (korunanlar hariç) ===
+function copyRecursive(src, dest) {
+  if (!fs.existsSync(dest)) fs.mkdirSync(dest, { recursive: true });
+
+  const entries = fs.readdirSync(src, { withFileTypes: true });
+
+  for (let entry of entries) {
+    const srcPath = path.join(src, entry.name);
+    const destPath = path.join(dest, entry.name);
+
+    // Atlanacak klasörler
+    if ([".git", "node_modules"].includes(entry.name)) continue;
+
+    // Korunacak dosyalar
+    if (protectedFiles.includes(entry.name)) {
+      log(`Korunuyor: ${entry.name}`);
+      continue;
+    }
+
+    if (entry.isDirectory()) {
+      copyRecursive(srcPath, destPath);
+    } else {
+      fs.copyFileSync(srcPath, destPath);
+      log(`Güncellendi: ${entry.name}`);
+    }
   }
 }
 
-// === Komut Çalıştırma ===
-function runCommand(command, cwd = ".") {
-  try {
-    execSync(command, { cwd, stdio: "inherit" });
-  } catch (err) {
-    log(`Komut Hatası: ${err.message}`);
-  }
+// === ZIP indir ===
+function downloadZip(url, outputPath, callback) {
+  const file = fs.createWriteStream(outputPath);
+  https.get(url, (response) => {
+    response.pipe(file);
+    file.on("finish", () => {
+      file.close(callback);
+    });
+  });
 }
 
-// === Güncelleme ===
+// === Başla ===
 function updateProject() {
-  const fullPath = path.join(__dirname, localFolder);
+  const zipPath = path.join(__dirname, "temp.zip");
 
-  if (fs.existsSync(fullPath)) {
-    log("Proje zaten var. Klasör siliniyor...");
-    deleteFolderRecursive(fullPath);
-  }
+  log("ZIP indiriliyor...");
+  downloadZip(zipUrl, zipPath, () => {
+    log("ZIP indirildi. Açılıyor...");
 
-  log("Proje GitHub'dan klonlanıyor...");
-  runCommand(`git clone ${repoURL}`);
+    const zip = new AdmZip(zipPath);
+    zip.extractAllTo("temp_extract", true);
+
+    const extractedFolderName = `${repoName}-main`;
+    const extractedPath = path.join(__dirname, "temp_extract", extractedFolderName);
+
+    log("Dosyalar güncelleniyor (tokens.txt korunuyor)...");
+    copyRecursive(extractedPath, targetDir);
+
+    // Temizleme
+    fs.rmSync(zipPath);
+    fs.rmSync(path.join(__dirname, "temp_extract"), { recursive: true, force: true });
+
+    log("✅ Güncelleme tamamlandı!");
+  });
 }
 
-// === Başlat ===
 updateProject();

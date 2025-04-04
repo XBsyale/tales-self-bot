@@ -18,7 +18,8 @@ console.clear();
 console.log(theme.title(`
 ████████╗ █████╗ ██╗     ███████╗███████╗
 ╚══██╔══╝██╔══██╗██║     ██╔════╝██╔════╝
-
+   ██║   ███████║██║     █████╗  ███████╗
+   ██║   ██╔══██║██║     ██╔══╝  ╚════██║
    ██║   ██║  ██║███████╗███████╗███████║
    ╚═╝   ╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝
   SelfBot Multi-Tool v2.0 | Otomatik Güncelleyici Destekli deneme
@@ -44,7 +45,6 @@ async function main() {
 [4] Para Kontrolü
 [5] Mesaj Gönderme
 [6] Para Gönderme
-[7] BOTU GÜNCELLE (GitHub'dan)
 [9] Token Listesini Değiştir (Şu an: ${paths.tokensFile})
 [0] Çıkış
 `));
@@ -132,17 +132,6 @@ async function main() {
             } else {
                 console.log(theme.error(`\n»»——————★——————««\nGÖNDERİLEMEYEN MİKTAR: ${remainingAmount.toLocaleString()} cowoncy\n»»——————★——————««`));
                 console.log(theme.info(`Not: Daha fazla hesap ekleyerek kalan miktarı gönderebilirsiniz.`));
-            }
-        }
-        else if (choice === '7') {
-            console.log(theme.highlight("\n🔍 GitHub'dan güncellemeler kontrol ediliyor..."));
-            const updated = await checkUpdates();
-            if (updated) {
-                console.log(theme.success("\n✅ Güncelleme tamamlandı! Yeniden başlatılıyor..."));
-                await new Promise(resolve => setTimeout(resolve, 3000));
-                process.exit(0);
-            } else {
-                console.log(theme.info("\n✔️ Bot zaten güncel."));
             }
         }
         else if (choice === '9') {

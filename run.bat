@@ -1,6 +1,5 @@
 @echo off
-title Tales SelfBot - Başlatıcı
+title Tales SelfBot
 color 0a
-echo.
-echo [~] Güncelleme kontrolü yapılıyor...
 node updater.js
+pause

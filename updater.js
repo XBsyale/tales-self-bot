@@ -6,11 +6,38 @@ const { theme } = require('./config');
 const GITHUB_REPO = "XBsyale/tales-self-bot";
 const CURRENT_COMMIT_FILE = "current_commit.txt";
 
+async function downloadUpdate() {
+    return new Promise((resolve, reject) => {
+        const file = fs.createWriteStream("update.zip");
+        https.get(`https://github.com/${GITHUB_REPO}/archive/main.zip`, (response) => {
+            response.pipe(file);
+            file.on('finish', () => {
+                file.close(resolve);
+            });
+        }).on('error', (err) => {
+            fs.unlink("update.zip", () => reject(err));
+        });
+    });
+}
+
+async function extractUpdate() {
+    try {
+        const AdmZip = require('adm-zip');
+        const zip = new AdmZip("update.zip");
+        zip.extractAllTo(".", true);
+        fs.unlinkSync("update.zip");
+        return true;
+    } catch (error) {
+        console.error(theme.error("ZIP açma hatası:", error));
+        return false;
+    }
+}
+
 async function checkUpdates() {
     try {
         console.log(theme.info("\n🔍 Güncellemeler kontrol ediliyor..."));
 
-        // GitHub'dan son commit hash'ini al
+        // 1. Commit bilgisini al
         const latestCommit = await new Promise((resolve, reject) => {
             https.get(`https://api.github.com/repos/${GITHUB_REPO}/commits/main`, {
                 headers: { 'User-Agent': 'Node.js' }
@@ -22,50 +49,46 @@ async function checkUpdates() {
         });
 
         const latestCommitHash = latestCommit.sha;
-        const currentCommitHash = fs.existsSync(CURRENT_COMMIT_FILE)
-            ? fs.readFileSync(CURRENT_COMMIT_FILE, 'utf-8').trim()
-            : "";
+        const currentCommitHash = fs.existsSync(CURRENT_COMMIT_FILE) ?
+            fs.readFileSync(CURRENT_COMMIT_FILE, 'utf-8').trim() : "";
 
+        // 2. Güncelleme varsa indir ve uygula
         if (latestCommitHash !== currentCommitHash) {
             console.log(theme.highlight("\n🔄 Yeni güncelleme bulundu!"));
             
-            // ZIP indirme ve çıkarma işlemleri
-            console.log(theme.info("⬇️ Güncelleme indiriliyor..."));
-            execSync(`curl -L https://github.com/${GITHUB_REPO}/archive/main.zip -o update.zip`);
+            await downloadUpdate();
+            console.log(theme.info("⬇️ İndirme tamamlandı. Çıkarılıyor..."));
             
-            console.log(theme.info("📦 Dosyalar çıkarılıyor..."));
-            const AdmZip = require('adm-zip');
-            const zip = new AdmZip('update.zip');
-            zip.extractAllTo(".", true);
-            fs.unlinkSync("update.zip");
-            
-            // Commit hash'ini güncelle
-            fs.writeFileSync(CURRENT_COMMIT_FILE, latestCommitHash);
-            console.log(theme.success("\n✅ Güncelleme tamamlandı!"));
+            if (await extractUpdate()) {
+                fs.writeFileSync(CURRENT_COMMIT_FILE, latestCommitHash);
+                console.log(theme.success("✅ Güncelleme tamamlandı!"));
+            }
         } else {
             console.log(theme.success("\n✔️ Bot zaten güncel."));
         }
 
-        // Ana uygulamayı başlat
+        // 3. Main.js'yi başlat (YENİ ve ÖNEMLİ KISIM)
         console.log(theme.highlight("\n🚀 Ana uygulama başlatılıyor..."));
         const mainProcess = spawn('node', ['main.js'], {
             stdio: 'inherit',
-            shell: true
+            windowsHide: false,
+            detached: false
         });
 
         mainProcess.on('close', (code) => {
             if (code !== 0) {
-                console.log(theme.error(`\n❌ Main uygulaması hata kodu ${code} ile kapandı`));
+                console.log(theme.error(`Ana uygulama ${code} kodu ile kapandı`));
             }
+            process.exit(code); // Terminalin kapanmaması için
         });
 
     } catch (error) {
-        console.log(theme.error("\n❌ Kritik hata:", error.message));
+        console.error(theme.error("\n❌ Kritik hata:", error.message));
         process.exit(1);
     }
 }
 
-// Doğrudan çalıştırma
+// Doğrudan çalıştırma kontrolü
 if (require.main === module) {
     checkUpdates();
 } else {

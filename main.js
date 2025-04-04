@@ -22,7 +22,7 @@ console.log(theme.title(`
    ██║   ██╔══██║██║     ██╔══╝  ╚════██║
    ██║   ██║  ██║███████╗███████╗███████║
    ╚═╝   ╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝
-  SelfBot Multi-Tool v2.0 | Otomatik Güncelleyici Destekli deneme
+  SelfBot Multi-Tool v2.0 | Otomatik Güncelleyici Destekli 
 `));
 
 // Ana menü

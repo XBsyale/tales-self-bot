@@ -22,7 +22,7 @@ class ContextMenuInteraction extends BaseCommandInteraction {
     );
 
     /**
-     * The id of the target of this interaction
+     * The id of the target of the interaction
      * @type {Snowflake}
      */
     this.targetId = data.data.target_id;

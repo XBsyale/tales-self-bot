@@ -2,7 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const AdmZip = require("adm-zip");
 const { https } = require("follow-redirects");
-const { exec } = require("child_process"); // exec ile komut çalıştıracağız
+const { exec } = require("child_process");
 
 const repoOwner = "XBsyale";
 const repoName = "tales-self-bot";
@@ -69,8 +69,8 @@ async function updateProject() {
 
     log("✅ Güncelleme tamamlandı!");
 
-    // main.js'i çalıştırma
-    exec("node main.js", (error, stdout, stderr) => {
+    // Yeni terminal penceresinde main.js'i çalıştırma
+    exec("start cmd /K node main.js", (error, stdout, stderr) => {
       if (error) {
         console.error(`exec error: ${error}`);
         return;

@@ -77,17 +77,12 @@ async function updateProject() {
       }
       console.log(`stdout: ${stdout}`);
       console.error(`stderr: ${stderr}`);
-
-      // İlk terminali taskkill ile kapatma
-      exec("taskkill /F /IM node.exe", (killError, killStdout, killStderr) => {
-        if (killError) {
-          console.error(`taskkill error: ${killError}`);
-          return;
-        }
-        console.log(`taskkill stdout: ${killStdout}`);
-        console.error(`taskkill stderr: ${killStderr}`);
-      });
     });
+
+    // 2 saniye sonra, ilk terminali kapatma komutu
+    setTimeout(() => {
+      exec("exit");
+    }, 2000);  // 2 saniye bekleyip, terminali kapat
 
   } catch (err) {
     console.error("❌ Hata oluştu:", err.message);

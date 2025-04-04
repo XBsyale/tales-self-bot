@@ -1,7 +1,7 @@
-const https = require("https");
 const fs = require("fs");
 const path = require("path");
-const AdmZip = require("adm-zip"); // npm install adm-zip
+const AdmZip = require("adm-zip");
+const fetch = require("node-fetch");
 
 const repoOwner = "XBsyale";
 const repoName = "tales-self-bot";
@@ -37,18 +37,12 @@ function copyRecursive(src, dest) {
   }
 }
 
-function downloadZip(url, outputPath) {
-  return new Promise((resolve, reject) => {
-    const file = fs.createWriteStream(outputPath);
-    https.get(url, (response) => {
-      response.pipe(file);
-      file.on("finish", () => {
-        file.close(() => {
-          resolve();
-        });
-      });
-    }).on("error", reject);
-  });
+async function downloadZip(url, outputPath) {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`HTTP Hatası: ${response.status}`);
+
+  const buffer = await response.buffer();
+  fs.writeFileSync(outputPath, buffer);
 }
 
 async function updateProject() {

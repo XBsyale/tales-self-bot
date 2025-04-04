@@ -1,37 +1,37 @@
-const fs = require('fs');
-const https = require('https');
-const { spawn } = require('child_process');
-const { theme } = require('./config');
+const { execSync } = require("child_process");
+const fs = require("fs");
+const path = require("path");
 
-const GITHUB_REPO = "XBsyale/tales-self-bot";
-const CURRENT_COMMIT_FILE = "current_commit.txt";
+// === Ayarlar ===
+const repoURL = "https://github.com/XBsyale/tales-self-bot.git";
+const localFolder = "tales-self-bot"; // Klasör adı repo ismiyle aynı
 
-// Ana fonksiyon
-async function checkUpdates() {
-    try {
-        console.log(theme.info("\n🔍 Güncellemeler kontrol ediliyor..."));
-
-        // Güncelleme kontrol mantığı buraya gelecek
-        console.log(theme.success("\n✔️ Güncelleme kontrolü tamamlandı"));
-
-        // Main.js'yi başlat
-        console.log(theme.highlight("\n🚀 Ana uygulama başlatılıyor..."));
-        const mainProcess = spawn('node', ['main.js'], {
-            stdio: 'inherit',
-            shell: true
-        });
-
-        mainProcess.on('close', (code) => {
-            if (code !== 0) {
-                console.log(theme.error(`Ana uygulama ${code} kodu ile kapandı`));
-            }
-        });
-
-    } catch (error) {
-        console.error(theme.error("\n❌ Kritik hata:", error.message));
-        process.exit(1);
-    }
+// === Log Fonksiyonu ===
+function log(message) {
+  console.log(`[Updater] ${message}`);
 }
 
-// Modül olarak export et
-module.exports = checkUpdates;
+// === Komut Çalıştırma Fonksiyonu ===
+function runCommand(command, cwd = ".") {
+  try {
+    execSync(command, { cwd, stdio: "inherit" });
+  } catch (err) {
+    log(`Hata: ${err.message}`);
+  }
+}
+
+// === Güncelleme Fonksiyonu ===
+function updateProject() {
+  const projectPath = path.join(__dirname, localFolder);
+
+  if (!fs.existsSync(projectPath)) {
+    log("Proje bulunamadı. GitHub'dan klonlanıyor...");
+    runCommand(`git clone ${repoURL}`);
+  } else {
+    log("Proje bulundu. Güncelleniyor (git pull)...");
+    runCommand(`git pull`, projectPath);
+  }
+}
+
+// === Başlat ===
+updateProject();

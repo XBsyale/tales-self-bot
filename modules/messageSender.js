@@ -12,7 +12,7 @@ module.exports = async function sendMessage(token, index, channelId, messageCont
         const channel = await client.channels.fetch(channelId);
         await channel.send(messageContent);
         
-        console.log(theme.success(`[${index}] ${client.user.username} mesaj gönderdi: "${messageContent}"`));
+     console.log(theme.success(`[${index}] ${client.token} ${client.user.username} mesaj gönderdi: "${messageContent}"`));
         return true;
     } catch (error) {
         console.log(theme.error(`[${index}] Mesaj gönderme hatası: ${error.message}`));

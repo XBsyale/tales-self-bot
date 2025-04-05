@@ -9,7 +9,6 @@ const moneyChecker = require('./modules/moneyChecker');
 const sendMessage = require('./modules/messageSender');
 const transferMoney = require('./modules/moneyTransfer');
 
-
 // TOPLAM PARA İÇİN GLOBAL DEĞİŞKEN
 let totalCowoncy = 0;
 

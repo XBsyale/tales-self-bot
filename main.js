@@ -8,7 +8,7 @@ const checkToken = require('./modules/tokenChecker');
 const moneyChecker = require('./modules/moneyChecker');
 const sendMessage = require('./modules/messageSender');
 const transferMoney = require('./modules/moneyTransfer');
-const checkUpdates = require('./updater'); // Güncelleme modülü eklendi
+
 
 // TOPLAM PARA İÇİN GLOBAL DEĞİŞKEN
 let totalCowoncy = 0;
@@ -22,18 +22,12 @@ console.log(theme.title(`
    ██║   ██╔══██║██║     ██╔══╝  ╚════██║
    ██║   ██║  ██║███████╗███████╗███████║
    ╚═╝   ╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝
-  SelfBot Multi-Tool v2.0 | Otomatik Güncelleyici Destekli deneme
+  SelfBot Multi-Tool v2.0 | Otomatik Güncelleyici Destekli 
 `));
 
 // Ana menü
 async function main() {
-    // Güncelleme kontrolü yap
-    const updated = await checkUpdates();
-    if (updated) {
-        console.log(theme.highlight("\n🔄 Bot yeniden başlatılıyor..."));
-        await new Promise(resolve => setTimeout(resolve, 3000));
-        process.exit(0);
-    }
+
 
     let tokens = loadTokens();
     
@@ -134,6 +128,7 @@ async function main() {
                 console.log(theme.info(`Not: Daha fazla hesap ekleyerek kalan miktarı gönderebilirsiniz.`));
             }
         }
+
         else if (choice === '9') {
             changeTokenList();
             tokens = loadTokens();
